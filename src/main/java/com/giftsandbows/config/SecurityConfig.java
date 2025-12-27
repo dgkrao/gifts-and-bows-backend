@@ -2,6 +2,7 @@ package com.giftsandbows.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,30 +23,47 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+            // Disable CSRF (API-based auth)
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> {})
+
+            // ✅ ENABLE CORS (uses CorsConfig bean)
+            .cors(Customizer.withDefaults())
+
+            // Stateless session (JWT)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+
+            // Authorization rules
             .authorizeHttpRequests(auth -> auth
 
-    // 🔓 PUBLIC APIs
-    .requestMatchers(
-        "/api/auth/**",
-        "/api/categories/**",
-        "/api/products/**",
-        "/uploads/**"
-    ).permitAll()
+                // ✅ ROOT & HEALTH (Render + browser)
+                .requestMatchers(
+                    "/",
+                    "/health",
+                    "/error"
+                ).permitAll()
 
-    // 🔐 ADMIN APIs
-    .requestMatchers("/api/admin/**")
-    .hasAuthority("ADMIN")
+                // 🔓 PUBLIC APIs
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/categories/**",
+                    "/api/products/**",
+                    "/uploads/**"
+                ).permitAll()
 
-    // 🔒 EVERYTHING ELSE
-    .anyRequest().authenticated()
-)
+                // 🔐 ADMIN APIs
+                .requestMatchers("/api/admin/**")
+                .hasAuthority("ADMIN")
 
+                // 🔒 EVERYTHING ELSE
+                .anyRequest().authenticated()
+            )
+
+            // JWT filter
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // Disable default login mechanisms
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable());
 
