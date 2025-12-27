@@ -1,0 +1,13 @@
+# Java
+target/
+*.log
+
+# Uploads
+uploads/
+
+# Env
+.env
+
+# OS
+.DS_Store
+Thumbs.db
